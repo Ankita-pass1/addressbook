@@ -1,7 +1,6 @@
 pipeline {
     agent none
     tools {
-        // jdk "myjava" // Uncomment and define JDK if needed
         maven "mymaven"
     }
     parameters {
@@ -15,6 +14,7 @@ pipeline {
             steps {
                 // Checkout the code, ensuring BRANCH_NAME is available
                 checkout scm
+                echo "Checked out to branch: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
             }
         }
         stage('Compile') {
@@ -42,12 +42,6 @@ pipeline {
             }
         }
         stage('Package') {
-            when {
-                expression {
-                    // Now, BRANCH_NAME will be available because the 'checkout scm' step ran
-                    env.BRANCH_NAME == 'b1'
-                }
-            }
             agent any
             input {
                 message "Select the version to deploy"
@@ -57,8 +51,15 @@ pipeline {
                 }
             }
             steps {
-                echo "Package the code ${params.NEWAPP}"  // Adjusted to use NEWAPP
-                sh "mvn package"
+                echo "BRANCH_NAME: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
+                script {
+                    if (env.BRANCH_NAME == 'b1') {
+                        echo "Packaging the code ${params.NEWAPP}"
+                        sh "mvn package"
+                    } else {
+                        echo "Skipping Package stage as branch is not 'b1'"
+                    }
+                }
             }
         }
     }
