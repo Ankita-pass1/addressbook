@@ -41,6 +41,6 @@ fi
 
 # Run Maven package
 echo "Running Maven package..."
-mvn clean package
+mvn  package
 
 echo "Script completed successfully."

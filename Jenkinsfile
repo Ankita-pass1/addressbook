@@ -8,6 +8,9 @@ pipeline {
         booleanParam(name: 'executeTests', defaultValue: true, description: 'Decide to run tests')
         choice(name: 'APPVERSION', choices: ['1.1', '1.2', '1.3'])
     }
+    environment {  // Define environment variables for the whole pipeline
+       BUILD_SERVER = 'ec2-user@172.31.32.203'
+    }
     stages {
         stage('Checkout') {
             agent any
@@ -43,24 +46,28 @@ pipeline {
         }
         stage('Package') {
             agent any
-            input {
-                message "Select the version to deploy"
-                ok "Version selected"
-                parameters {
-                    choice(name: 'NEWAPP', choices: ['1.2', '2.1', '3.1'])
-                }
-            }
+            // input {
+            //     message "Select the version to deploy"
+            //     ok "Version selected"
+            //     parameters {
+            //         choice(name: 'NEWAPP', choices: ['1.2', '2.1', '3.1'])
+            //     }
+            // }
             steps {
-                echo "BRANCH_NAME: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
-                script {
-                    if (env.BRANCH_NAME == 'b1') {
-                        echo "Packaging the code ${params.NEWAPP}"
-                        sh "mvn package"
-                    } else {
-                        echo "Skipping Package stage as branch is not 'b1'"
-                        sh "mvn package"
+                    sshagent(['slave_2']) {
+                //echo "BRANCH_NAME: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
+                // script {
+                //     // if (env.BRANCH_NAME == 'b1') {
+                     echo "Packaging the code ${parasms.NEWAPP}"
+                     sh "scp -o StrictHostkeyChecking=no server-congig.sh ${BUILD_SERVER} :/home/ec2-user"
+                     sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash server-comgig.sh'"
+                //     //     sh "mvn package"
+                //     // } else {
+                //     //     echo "Skipping Package stage as branch is not 'b1'"
+                   // sh "mvn package"
+                //     // }
+                // }
                     }
-                }
             }
         }
     }
