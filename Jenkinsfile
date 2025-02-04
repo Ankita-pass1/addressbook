@@ -60,7 +60,7 @@ pipeline {
                 //     // if (env.BRANCH_NAME == 'b1') {
                      echo "Packaging the code ${parasms.NEWAPP}"
                      sh "scp -o StrictHostkeyChecking=no server-congig.sh ${BUILD_SERVER} :/home/ec2-user"
-                     sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash server-comgig.sh'"
+                     sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash server-congig.sh'"
                 //     //     sh "mvn package"
                 //     // } else {
                 //     //     echo "Skipping Package stage as branch is not 'b1'"
