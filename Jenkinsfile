@@ -10,6 +10,13 @@ pipeline {
         choice(name: 'APPVERSION', choices: ['1.1', '1.2', '1.3'])
     }
     stages {
+        stage('Checkout') {
+            agent any
+            steps {
+                // Checkout the code, ensuring BRANCH_NAME is available
+                checkout scm
+            }
+        }
         stage('Compile') {
             agent any
             steps {
@@ -37,6 +44,7 @@ pipeline {
         stage('Package') {
             when {
                 expression {
+                    // Now, BRANCH_NAME will be available because the 'checkout scm' step ran
                     env.BRANCH_NAME == 'b1'
                 }
             }
