@@ -58,6 +58,7 @@ pipeline {
                         sh "mvn package"
                     } else {
                         echo "Skipping Package stage as branch is not 'b1'"
+                        sh "mvn package"
                     }
                 }
             }
