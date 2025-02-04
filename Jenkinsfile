@@ -44,31 +44,55 @@ pipeline {
                 }
             }
         }
+        // stage('Package') {
+        //     agent any
+        //     // input {
+        //     //     message "Select the version to deploy"
+        //     //     ok "Version selected"
+        //     //     parameters {
+        //     //         choice(name: 'NEWAPP', choices: ['1.2', '2.1', '3.1'])
+        //     //     }
+        //     // }
+        //     steps {
+        //             sshagent(['slave_2']) {
+        //         //echo "BRANCH_NAME: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
+        //         // script {
+        //         //     // if (env.BRANCH_NAME == 'b1') {
+        //              echo "Packaging the code ${params.NEWAPP}"
+        //              sh "scp -o StrictHostkeyChecking=no server-congig.sh ${BUILD_SERVER} :/home/ec2-user"
+        //              sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash server-congig.sh'"
+        //         //     //     sh "mvn package"
+        //         //     // } else {
+        //         //     //     echo "Skipping Package stage as branch is not 'b1'"
+        //            // sh "mvn package"
+        //         //     // }
+        //         // }
+        //             }
+        //     }
+        // }
         stage('Package') {
             agent any
-            // input {
-            //     message "Select the version to deploy"
-            //     ok "Version selected"
-            //     parameters {
-            //         choice(name: 'NEWAPP', choices: ['1.2', '2.1', '3.1'])
-            //     }
-            // }
             steps {
-                    sshagent(['slave_2']) {
-                //echo "BRANCH_NAME: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
-                // script {
-                //     // if (env.BRANCH_NAME == 'b1') {
-                     echo "Packaging the code ${parasms.NEWAPP}"
-                     sh "scp -o StrictHostkeyChecking=no server-congig.sh ${BUILD_SERVER} :/home/ec2-user"
-                     sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash server-congig.sh'"
-                //     //     sh "mvn package"
-                //     // } else {
-                //     //     echo "Skipping Package stage as branch is not 'b1'"
-                   // sh "mvn package"
-                //     // }
-                // }
-                    }
+                script {
+                    echo "Packaging the code ${params.NEWAPP}"
+
+                    // Ensure SSH access is working
+                    sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'echo Hello'"
+
+                    // Transfer the server-config.sh script and run it on the build server
+                    echo "Transferring server-config.sh to build server"
+                    sh "scp -o StrictHostkeyChecking=no server-congig.sh ${BUILD_SERVER}:/home/ec2-user"
+
+                    // Execute the configuration script on the build server
+                    echo "Running server-config.sh on the build server"
+                    sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash /home/ec2-user/server-congig.sh'"
+
+                    // Run Maven package after the server setup
+                    echo "Running Maven package"
+                    sh "mvn package"
+                }
             }
         }
+
     }
 }
