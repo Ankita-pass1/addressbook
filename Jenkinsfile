@@ -76,6 +76,8 @@ pipeline {
             agent any
             steps {
                 sshagent(['slave_2']){
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'password', usernameVariable: 'username')]) {
+
                     echo "Containarizing the Build Stage ${params.NEWAPP}"
 
                     // Ensure SSH access is working
@@ -93,8 +95,9 @@ pipeline {
                    //echo "Running Maven package"
                     
                     //sh "mvn package"
-                    sh "ssh ${BUILD_SERVER} sudo docker login -u ankita2025 -p ****"
+                    sh "ssh ${BUILD_SERVER} sudo docker login -u ${username} -p ${password}"
                     sh "ssh ${BUILD_SERVER} sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                }
                 }
             }
         }
