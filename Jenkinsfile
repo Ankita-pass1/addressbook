@@ -75,7 +75,7 @@ pipeline {
         stage('Containarizing build stage') {
             agent any
             steps {
-                sshagent(['slave2']){
+                sshagent(['slave_2']){
                     echo "Containarizing the Build Stage ${params.NEWAPP}"
 
                     // Ensure SSH access is working
