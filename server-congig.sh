@@ -10,12 +10,12 @@ echo "Updating package list..."
 sudo yum update -y
 
 # Install Java (OpenJDK 11)
-echo "Installing Java..."
-sudo yum install java -y 
+#echo "Installing Java..."
+#sudo yum install java -y 
 
 # Install Maven
-echo "Installing Maven..."
-sudo yum install -y maven
+#echo "Installing Maven..."
+#sudo yum install -y maven
 
 # Install Git
 echo "Installing Git..."
@@ -23,8 +23,8 @@ sudo yum install -y git
 
 # Verify installations
 echo "Verifying installations..."
-java -version
-mvn -version
+#java -version
+#mvn -version
 git --version
 
 # Check if the project directory exists
@@ -40,7 +40,7 @@ else
 fi
 
 # Run Maven package
-echo "Running Maven package..."
-mvn  package
-
+#echo "Running Maven package..."
+#mvn  package
+sudo docker build -t $1:$2 /home/ec2-user/addressbook
 echo "Script completed successfully."
