@@ -10,6 +10,7 @@ pipeline {
     }
     environment {  // Define environment variables for the whole pipeline
        BUILD_SERVER = 'ec2-user@172.31.32.203'
+       IMAGE_NAME='ankita2025/devops'
     }
     stages {
         stage('Checkout') {
@@ -70,11 +71,12 @@ pipeline {
         //             }
         //     }
         // }
-        stage('Package') {
+        
+        stage('Containarizing build stage') {
             agent any
             steps {
-                script {
-                    echo "Packaging the code ${params.NEWAPP}"
+                sshagent(['slave2']){
+                    echo "Containarizing the Build Stage ${params.NEWAPP}"
 
                     // Ensure SSH access is working
                     sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'echo Hello'"
@@ -85,11 +87,14 @@ pipeline {
 
                     // Execute the configuration script on the build server
                     echo "Running server-config.sh on the build server"
-                    sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash /home/ec2-user/server-congig.sh'"
+                    sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash /home/ec2-user/server-congig.sh' ${IMAGE_NAME} ${BUILD_NUMBER}"
 
                     // Run Maven package after the server setup
-                    echo "Running Maven package"
-                    sh "mvn package"
+                   //echo "Running Maven package"
+                    
+                    //sh "mvn package"
+                    sh "ssh ${BUILD_SERVER} sudo docker login -u ankita2025 -p ****"
+                    sh "ssh ${BUILD_SERVER} sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                 }
             }
         }
