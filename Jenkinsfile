@@ -9,8 +9,9 @@ pipeline {
         choice(name: 'APPVERSION', choices: ['1.1', '1.2', '1.3'])
     }
     environment {  // Define environment variables for the whole pipeline
-       BUILD_SERVER = 'ec2-user@172.31.32.203'
-       IMAGE_NAME='ankita2025/devops'
+       BUILD_SERVER = 'ec2-user@172.31.27.112'
+       DEPLOY_SERVER = 'ec2-user@172.31.27.28'
+       IMAGE_NAME= 'ankita2025/devops'
     }
     stages {
         stage('Checkout') {
@@ -81,7 +82,7 @@ pipeline {
                     echo "Containarizing the Build Stage ${params.NEWAPP}"
 
                     // Ensure SSH access is working
-                    sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'echo Hello'"
+                   // sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'echo Hello'"
 
                     // Transfer the server-config.sh script and run it on the build server
                     echo "Transferring server-config.sh to build server"
@@ -95,8 +96,39 @@ pipeline {
                    //echo "Running Maven package"
                     
                     //sh "mvn package"
-                    sh "ssh ${BUILD_SERVER} sudo docker login -u ${username} -p ${password}"
+                    sh "ssh  -o StrictHostkeyChecking=no ${BUILD_SERVER} sudo docker login -u ${username} -p ${password}"
                     sh "ssh ${BUILD_SERVER} sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                }
+                }
+            }
+        }
+        stage('Deployment Stae') {
+            agent any
+            steps {
+                sshagent(['slave_2']){
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'password', usernameVariable: 'username')]) {
+
+                    //echo "Containarizing the Build Stage ${params.NEWAPP}"
+
+                    // Ensure SSH access is working
+                   // sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'echo Hello'"
+
+                    // Transfer the server-config.sh script and run it on the build server
+                   // echo "Transferring server-config.sh to build server"
+                    //sh "scp -o StrictHostkeyChecking=no server-congig.sh ${BUILD_SERVER}:/home/ec2-user"
+
+                    // Execute the configuration script on the build server
+                    //echo "Running server-config.sh on the build server"
+                    //sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash /home/ec2-user/server-congig.sh' ${IMAGE_NAME} ${BUILD_NUMBER}"
+
+                    // Run Maven package after the server setup
+                   //echo "Running Maven package"
+                    
+                    //sh "mvn package"
+                    sh "ssh -o StrictHostkeyChecking=no ${DEPLOY_SERVER} sudo yum docker install -y"
+                    sh "ssh ${DEPLOY_SERVER} sudo systemctl start docker"
+                    sh "ssh  ${DEPLOY_SERVER} sudo docker login -u ${username} -p ${password}"
+                    sh "ssh ${DEPLOY_SERVER} sudo docker run -itd -P ${IMAGE_NAME}:${BUILD_NUMBER}"
                 }
                 }
             }
