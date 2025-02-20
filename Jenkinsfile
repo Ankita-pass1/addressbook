@@ -14,14 +14,14 @@ pipeline {
        IMAGE_NAME= 'ankita2025/devops'
     }
     stages {
-        stage('Checkout') {
-            agent any
-            steps {
+        //stage('Checkout') {
+          //  agent any
+            //steps {
                 // Checkout the code, ensuring BRANCH_NAME is available
-                checkout scm
-                echo "Checked out to branch: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
-            }
-        }
+              //  checkout scm
+                //echo "Checked out to branch: ${env.BRANCH_NAME}"  // Debugging BRANCH_NAME
+            //}
+        //}
         stage('Compile') {
             agent any
             steps {
