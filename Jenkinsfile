@@ -60,8 +60,12 @@ pipeline {
                         sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash /home/ec2-user/server-congig.sh' ${IMAGE_NAME} ${BUILD_NUMBER}"
                         
                         // Docker login and push to Docker Hub
-                        sh "ssh  -o StrictHostkeyChecking=no ${BUILD_SERVER} sudo docker login -u ${username} -p ${password}"
-                        sh "ssh ${BUILD_SERVER} sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                       // sh "ssh  -o StrictHostkeyChecking=no ${BUILD_SERVER} sudo docker login -u ${username} -p ${password}"
+                        //sh "ssh ${BUILD_SERVER} sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
+                        sh """
+                     ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'echo ${password} | sudo docker login -u ${username} --password-stdin'
+                     ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}'
+                        """
                     }
                 }
             }
@@ -74,8 +78,12 @@ pipeline {
                         // SSH login to the deployment server, install Docker, and run the image
                         sh "ssh -o StrictHostkeyChecking=no ${DEPLOY_SERVER} sudo yum install docker -y"
                         sh "ssh ${DEPLOY_SERVER} sudo systemctl start docker"
-                        sh "ssh  ${DEPLOY_SERVER} sudo docker login -u ${username} -p ${password}"
-                        sh "ssh ${DEPLOY_SERVER} sudo docker run -itd -P ${IMAGE_NAME}:${BUILD_NUMBER}"
+                        //sh "ssh  ${DEPLOY_SERVER} sudo docker login -u ${username} -p ${password}"
+                        //sh "ssh ${DEPLOY_SERVER} sudo docker run -itd -P ${IMAGE_NAME}:${BUILD_NUMBER}"
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} 'echo ${password} | sudo docker login -u ${username} --password-stdin'
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} 'sudo docker run -itd -P ${IMAGE_NAME}:${BUILD_NUMBER}'
+                        """
                     }
                 }
             }
