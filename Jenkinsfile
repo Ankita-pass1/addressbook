@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent none // No global agent is assigned
     tools {
         maven "mymaven"
     }
@@ -15,7 +15,7 @@ pipeline {
     }
     stages {
         stage('Compile') {
-            agent any
+            agent any  // Use any available agent
             steps {
                 sshagent(['slave_2']) {
                     echo "Compile the code in ${params.Env}"
@@ -29,7 +29,7 @@ pipeline {
                     params.executeTests == true
                 }
             }
-            agent any
+            agent any  // Use any available agent
             steps {
                 sshagent(['slave_2']) {
                     echo "Test the code"
@@ -43,65 +43,53 @@ pipeline {
             }
         }
         stage('Containerizing build stage') {
-            agent any
+            agent any  // Use any available agent
             steps {
                 sshagent(['slave_2']) {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'password', usernameVariable: 'username')]) {
-                        // Verify Dockerfile exists
-                        sh '''
-                            if [ ! -f Dockerfile ]; then
-                                echo "Error: Dockerfile not found!"
-                                exit 1
-                            fi
-                            echo "Dockerfile found. Proceeding with build..."
-                        '''
-
-                        // Transfer Dockerfile to the build server
-                        sh "scp -o StrictHostKeyChecking=no Dockerfile ${BUILD_SERVER}:/home/ec2-user"
-
-                        // Docker login
+                        echo "Containerizing the Build Stage ${params.APPVERSION}"
+                        // Ensure SSH access is working
+                        //sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'echo Hello'"
+                        
+                        // Transfer the server-config.sh script and run it on the build server
+                        echo "Transferring server-config.sh to build server"
+                        sh "scp -o StrictHostkeyChecking=no server-congig.sh ${BUILD_SERVER}:/home/ec2-user"
+                        
+                        // Execute the configuration script on the build server
+                        echo "Running server-config.sh on the build server"
+                        sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash /home/ec2-user/server-congig.sh' ${IMAGE_NAME} ${BUILD_NUMBER}"
+                        
+                        // Docker login and push to Docker Hub
+                       // sh "ssh  -o StrictHostkeyChecking=no ${BUILD_SERVER} sudo docker login -u ${username} -p ${password}"
+                        //sh "ssh ${BUILD_SERVER} sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
                         sh """
-                            ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'echo ${password} | sudo docker login -u ${username} --password-stdin'
+                     ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'echo ${password} | sudo docker login -u ${username} --password-stdin'
+                      echo "Building Docker image..."
+                     ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'sudo docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} /home/ec2-user/addressbook'
+                     ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'sudo docker images | grep ${IMAGE_NAME}:${BUILD_NUMBER}'
+                     ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}'
                         """
-
-                        // Docker build with logging
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'cd /home/ec2-user && sudo docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .' > docker-build.log 2>&1
-                            cat docker-build.log
-                        """
-
-                        // Verify Docker image
-                        sh "ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'sudo docker images'"
-
-                        // Docker push
-                        sh "ssh -o StrictHostKeyChecking=no ${BUILD_SERVER} 'sudo docker push ${IMAGE_NAME}:${BUILD_NUMBER}'"
                     }
                 }
             }
         }
         stage('Deployment Stage') {
-            agent any
+            agent any  // Use any available agent
             steps {
                 sshagent(['slave_2']) {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'password', usernameVariable: 'username')]) {
-                        // Docker login
+                        // SSH login to the deployment server, install Docker, and run the image
+                        sh "ssh -o StrictHostkeyChecking=no ${DEPLOY_SERVER} sudo yum install docker -y"
+                        sh "ssh ${DEPLOY_SERVER} sudo systemctl start docker"
+                        //sh "ssh  ${DEPLOY_SERVER} sudo docker login -u ${username} -p ${password}"
+                        //sh "ssh ${DEPLOY_SERVER} sudo docker run -itd -P ${IMAGE_NAME}:${BUILD_NUMBER}"
                         sh """
-                            ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} 'echo ${password} | sudo docker login -u ${username} --password-stdin'
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} 'echo ${password} | sudo docker login -u ${username} --password-stdin'
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} 'sudo docker run -itd -P ${IMAGE_NAME}:${BUILD_NUMBER}'
                         """
-
-                        // Docker run
-                        sh "ssh -o StrictHostKeyChecking=no ${DEPLOY_SERVER} 'sudo docker run -itd -P ${IMAGE_NAME}:${BUILD_NUMBER}'"
                     }
                 }
             }
-        }
-    }
-    post {
-        failure {
-            echo "Pipeline failed! Check logs for details."
-        }
-        success {
-            echo "Pipeline succeeded!"
         }
     }
 }
