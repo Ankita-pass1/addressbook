@@ -58,6 +58,9 @@ pipeline {
                         // Execute the configuration script on the build server
                         echo "Running server-config.sh on the build server"
                         sh "ssh -o StrictHostkeyChecking=no ${BUILD_SERVER} 'bash /home/ec2-user/server-congig.sh' ${IMAGE_NAME} ${BUILD_NUMBER}"
+
+                        echo "Transferring Dockerfile to build server..."
+                        sh "scp -o StrictHostKeyChecking=no Dockerfile ${BUILD_SERVER}:/home/ec2-user/addressbook/Dockerfile"
                         
                         // Docker login and push to Docker Hub
                        // sh "ssh  -o StrictHostkeyChecking=no ${BUILD_SERVER} sudo docker login -u ${username} -p ${password}"
