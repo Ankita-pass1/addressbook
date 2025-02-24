@@ -11,7 +11,7 @@ pipeline {
     environment {
         BUILD_SERVER = 'ec2-user@172.31.27.112'
         DEPLOY_SERVER = 'ec2-user@172.31.27.28'
-        IMAGE_NAME = 'ankita2025/devops'
+        IMAGE_NAME = 'ankita2025/docker'
     }
     stages {
         stage('Compile') {
